@@ -12,11 +12,11 @@ The src directory contains these files:
      read_solution.m
      save_solution.m
 
-Before running the code, you must first download and decompress the data files from the challenge web site. In particular, MATLAB will look on its path for these files:
+Before running the code, you must first download and decompress the data files from the challenge web site. In particular, code will look on its path for these files:
 
-     female_connectome_graph.csv
-     male_connectome_graph.csv
-     vnc_matching_submission_benchmark_5154247.csv
+     data/female_connectome_graph.csv
+     data/male_connectome_graph.csv
+     data/vnc_matching_submission_benchmark_5154247.csv
 
 To run the code in MATLAB, simply type
     > main

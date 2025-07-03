@@ -21,8 +21,8 @@ def main():
     
     # --- Read in Connectomes ---
     print('Loading connectomes ... ', end='', flush=True)
-    A = read_connectome('male_connectome_graph.csv')
-    B = read_connectome('female_connectome_graph.csv')
+    A = read_connectome('data/male_connectome_graph.csv')
+    B = read_connectome('data/female_connectome_graph.csv')
     print(f'{time.time() - t_start:.1f} sec.')
 
     # --- Initialization ---
@@ -34,7 +34,7 @@ def main():
         P = permutation_match(P)
     else:
         print('Initializing at submission benchmark.')
-        P = read_solution('vnc_matching_submission_benchmark_5154247.csv')
+        P = read_solution('data/vnc_matching_submission_benchmark_5154247.csv')
 
     # --- Main Optimization Loop ---
     # Search in simplex, project to vertex, then swap

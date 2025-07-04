@@ -4,46 +4,54 @@ from compute_gradient import compute_gradient
 from permutation_match import permutation_match
 from scipy.sparse import csr_matrix
 
+from src.util import log
+
 
 def frank_wolfe_update(P0, G0, Pm, A, B):
     """Performs a single Frank-Wolfe update step."""
-    # Project gradient to permutation matrix using the preconditioner
+    # Project gradient to permutation matrix using preconditioner
+    log("frank_wolfe_update [1]")
     P1 = permutation_match(G0, Pm)
 
-    # If the projection doesn't change, we're done
-    if (P0.toarray() == P1.toarray()).all():
+    log("frank_wolfe_update [2]")
+    # If unchanged, return early
+    if (P0 != P1).nnz == 0:
         return P0
 
-    # Compute step size
+    # Compute gradient at P1
     G1 = compute_gradient(P1, A, B)
+    log("frank_wolfe_update [3]")
 
-    P0_dense = P0.toarray()
-    P1_dense = P1.toarray()
+    # Compute step size using sparse operations
+    delta_P = P1 - P0
+    delta_G = G1 - G0
+    log("frank_wolfe_update [4]")
 
-    numer = np.sum((G1 - G0) * P0_dense + (P1_dense - P0_dense) * G0)
-    denom = np.sum((G1 - G0) * (P1_dense - P0_dense))
+    numer = (delta_G * P0).sum() + (G0 * delta_P).sum()
+    log("frank_wolfe_update [5]")
+    denom = (delta_G * delta_P).sum()
+    log("frank_wolfe_update [6]")
 
-    if abs(denom) < 1e-9:  # Avoid division by zero
+    if abs(denom) < 1e-9:
         step = 1.0
     else:
         step = -0.5 * (numer / denom)
 
-    # Stay within simplex, setting to 1 if outside [0,1] per the paper
-    if not (0 <= step <= 1):
-        step = 1.0
+    # Clip step size
+    step = max(0.0, min(1.0, step))
 
-    # Interpolate and return sparse matrix
-    Ps = P0 + step * (P1 - P0)
+    # Update P using sparse interpolation
+    Ps = P0 + (delta_P * step)
+    log("frank_wolfe_update [7]")
+
     return Ps
-
 
 def do_frank_wolfe(Ps, A, B, num_updates):
     """
     Performs Frank-Wolfe updates on the sparse doubly stochastic matrix Ps.
     """
-    t_start = time.time()
-    print('\nFrank-Wolfe updates:')
-    print('  iter    vertex   simplex   tMin')
+    log('\nFrank-Wolfe updates:')
+    log('  iter    vertex   simplex   tMin')
 
     # Ensure Ps is sparse for the loop
     if isinstance(Ps, np.ndarray):
@@ -53,14 +61,12 @@ def do_frank_wolfe(Ps, A, B, num_updates):
         # Pm is the closest permutation matrix to the current doubly-stochastic Ps
         Pm = permutation_match(Ps.toarray())
         Gs = compute_gradient(Ps, A, B)
-
         scorePm = np.minimum(A.toarray(), (Pm @ B @ Pm.T).toarray()).sum()
         scorePs = 0.5 * np.sum(Gs * Ps.toarray())
-
-        t_min = (time.time() - t_start) / 60
-        print(f'    {i:02d}   {int(scorePm):07d}   {int(scorePs):07d}   {t_min:04.1f}')
+        log(f'    {i:02d}   {int(scorePm):07d}   {int(scorePs):07d}')
 
         if i < num_updates:
             Ps = frank_wolfe_update(Ps, Gs, Pm, A, B)
+        log(f'    {i:02d}   done')
 
     return Ps

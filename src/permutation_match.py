@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.optimize import linear_sum_assignment
+from scipy.sparse.csgraph import min_weight_full_bipartite_matching
+from src.util import log
 
 
 def permutation_match(W, P0=None):
@@ -13,19 +15,25 @@ def permutation_match(W, P0=None):
         # The linear_sum_assignment function finds a minimum cost matching.
         # To find a maximum value matching, we use the negative of the weight matrix.
         # The input W must be dense for this function.
-        W_dense = W if isinstance(W, np.ndarray) else W.toarray()
-        row_ind, col_ind = linear_sum_assignment(-W_dense)
+        W_dense = csr_matrix(W) # if isinstance(W, np.ndarray) else W.toarray()
+        log("permutation_match [1a]")
+        row_ind, col_ind = min_weight_full_bipartite_matching(W_dense)
+        log("permutation_match [1b]")
         P = csr_matrix((np.ones_like(row_ind), (row_ind, col_ind)), shape=W.shape)
+        log("permutation_match [1c]")
         return P
     else:
         # Preconditioning heuristic from the paper and MATLAB code
         W_perm = W @ P0.T  # PERMUTE TO NEARLY DIAGONAL
+        log("permutation_match [2a]")
         D = W_perm.diagonal()[:, np.newaxis]  # Ensure D is a column vector
-
+        log("permutation_match [2b]")
         # SHIFT step: W = W - sum(W,1) - sum(W,2) + D + D'
         # This makes the matrix more diagonally dominant to speed up the solver.
         W_shifted = W_perm - W_perm.sum(axis=0) - W_perm.sum(axis=1)[:, np.newaxis] + D + D.T
-
+        log("permutation_match [2c]")
         P_match = permutation_match(W_shifted)  # Solve on the preconditioned matrix
+        log("permutation_match [2d]")
         P = P_match @ P0  # UN-PERMUTE to get the final result
+        log("permutation_match [2e]")
         return P

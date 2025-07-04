@@ -1,12 +1,11 @@
 import time
 import numpy as np
-from read_connectome import read_connectome
-from read_solution import read_solution
 from do_mult_updates import do_mult_updates
 from do_frank_wolfe import do_frank_wolfe
 from do_swaps import do_swaps
 from permutation_match import permutation_match
-from save_solution import save_solution
+from src.util import read_connectome, read_solution, save_solution
+
 
 def main():
     """

@@ -1,55 +1,78 @@
+from src.util import log
+
 import numpy as np
+from collections import defaultdict
 from scipy.sparse import find
+
 
 def compute_gradient(P, A, B):
     """
-    Computes dJ/dP where P is a sparse doubly stochastic matrix.
-    J(P) = sum_ijkl min(A_ij, B_kl) P_ik P_jl
-    (dJ/dP)_jl = sum_ik [min(A_ij, B_kl) + min(A_ji, B_lk)] P_ik
-    
-    The MATLAB code implements a different formula which seems to be
-    dJ/dP_ik = sum_jl [min(A_ij, B_kl) + min(A_ji, B_lk)] P_jl
-    Let's stick to the paper's formula for the gradient:
-    [gradS(P)]_jl = sum_ik [min(A_ij, B_kl) + min(A_ji, B_lk)] P_ik
-    
-    The MATLAB code seems to compute:
-    G_ia,jb += val(k) * min(a, b')
-    where P(row(k), col(k)) = val(k)
-    This is tricky. Let's re-implement based on the paper's math.
-    G_jl = sum_ik (min(A_ij, B_kl) + min(A_ji, B_lk)) * P_ik
-    
-    Let's re-implement the MATLAB logic directly first.
-    It seems to calculate G(ia, jb) += P(row(k), col(k)) * min(A(ia, row(k)), B(jb, col(k)))
-    This is essentially (A.T @ P @ B) + (A @ P @ B.T)
+    Computes the gradient G for the graph alignment score:
+    G[j,l] = sum_ik [min(A[i,j], B[k,l]) + min(A[j,i], B[l,k])] * P[i,k]
     """
-    # This is the direct, but potentially slow, translation from the paper's formula
-    # G = A.T @ P @ B + A @ P @ B.T
-    
-    # Direct translation of the MATLAB code's efficient loop
+
+    log("compute_gradient: Preprocessing A and B...")
+
+    # Convert A and B to COO format for fast row/col access
+    A_coo = A.tocoo()
+    B_coo = B.tocoo()
+
+    # Precompute A[:, r] for all columns r
+    A_cols = defaultdict(list)
+    for i, j, v in zip(A_coo.row, A_coo.col, A_coo.data):
+        A_cols[j].append((i, v))
+
+    # Precompute B[:, c] for all columns c
+    B_cols = defaultdict(list)
+    for i, j, v in zip(B_coo.row, B_coo.col, B_coo.data):
+        B_cols[j].append((i, v))
+
+    # Same for transposes (A.T[:, r] and B.T[:, c])
+    At_cols = defaultdict(list)
+    for j, i, v in zip(A_coo.col, A_coo.row, A_coo.data):
+        At_cols[j].append((i, v))
+
+    Bt_cols = defaultdict(list)
+    for j, i, v in zip(B_coo.col, B_coo.row, B_coo.data):
+        Bt_cols[j].append((i, v))
+
+    log("compute_gradient: Starting gradient computation...")
+
     n = P.shape[0]
     G = np.zeros((n, n))
+
+    # Extract non-zero entries of P
     rows, cols, vals = find(P)
-    At = A.T.tocsr()
-    Bt = B.T.tocsr()
 
-    for r, c, v in zip(rows, cols, vals):
-        # Term 1: A.T @ P @ B
-        # For a given P(r,c)=v, we add contributions to G
-        # from A(:,r) and B(:,c)
-        a_rows, _, a_vals = find(A[:, r])
-        b_rows, _, b_vals = find(B[:, c])
-        
-        # Create outer product of minimums
-        if a_rows.size > 0 and b_rows.size > 0:
-            min_matrix = np.minimum(a_vals[:, np.newaxis], b_vals)
-            G[np.ix_(a_rows, b_rows)] += v * min_matrix
-            
-        # Term 2: A @ P @ B.T
-        at_rows, _, at_vals = find(At[:, r])
-        bt_rows, _, bt_vals = find(Bt[:, c])
+    for idx, (r, c, v) in enumerate(zip(rows, cols, vals)):
+        if idx % 6000 == 1:
+            log(f"compute_gradient: Processing entry {idx}/{len(rows)}")
 
-        if at_rows.size > 0 and bt_rows.size > 0:
-             min_matrix_t = np.minimum(at_vals[:, np.newaxis], bt_vals)
-             G[np.ix_(at_rows, bt_rows)] += v * min_matrix_t
-             
+        # A.T @ P @ B term
+        a_entries = A_cols.get(r, [])
+        b_entries = B_cols.get(c, [])
+
+        if a_entries and b_entries:
+            a_rows, a_vals = zip(*a_entries)
+            b_rows, b_vals = zip(*b_entries)
+            a_vals = np.array(a_vals)[:, np.newaxis]  # shape (m, 1)
+            b_vals = np.array(b_vals)[np.newaxis, :]  # shape (1, k)
+            min_matrix = np.minimum(a_vals, b_vals) * v
+            G[np.ix_(a_rows, b_rows)] += min_matrix
+
+        # A @ P @ B.T term
+        at_entries = At_cols.get(r, [])
+        bt_entries = Bt_cols.get(c, [])
+
+        if at_entries and bt_entries:
+            at_rows, at_vals = zip(*at_entries)
+            bt_rows, bt_vals = zip(*bt_entries)
+            at_vals = np.array(at_vals)[:, np.newaxis]
+            bt_vals = np.array(bt_vals)[np.newaxis, :]
+            min_matrix_t = np.minimum(at_vals, bt_vals) * v
+            G[np.ix_(at_rows, bt_rows)] += min_matrix_t
+
+    log("compute_gradient: Finished gradient computation.")
+
     return G
+

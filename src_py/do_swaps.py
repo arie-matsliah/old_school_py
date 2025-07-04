@@ -1,6 +1,6 @@
 import numpy as np
 from compute_gradient import compute_gradient
-from src.util import log
+from src_py.util import log
 
 
 # Computes S_ij, the gain in score from swapping nodes i and j, before applying the permutation P.

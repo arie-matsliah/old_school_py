@@ -1,4 +1,4 @@
-from src.util import log
+from src_py.util import log
 
 import numpy as np
 from collections import defaultdict

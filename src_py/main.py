@@ -4,7 +4,7 @@ from do_mult_updates import do_mult_updates
 from do_frank_wolfe import do_frank_wolfe
 from do_swaps import do_swaps
 from permutation_match import permutation_match
-from src.util import read_connectome, read_solution, save_solution, log
+from src_py.util import read_connectome, read_solution, save_solution, log
 
 
 def main():

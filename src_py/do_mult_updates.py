@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.util import log
+from src_py.util import log
 
 
 def dense_mult_update(P, G, u, v):

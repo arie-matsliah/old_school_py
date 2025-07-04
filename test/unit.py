@@ -2,9 +2,9 @@ import unittest
 import numpy as np
 from scipy.sparse import csr_matrix, find
 
-from src.compute_gradient import compute_gradient
-from src.do_frank_wolfe import frank_wolfe_update, do_frank_wolfe
-from src.permutation_match import permutation_match
+from src_py.compute_gradient import compute_gradient
+from src_py.do_frank_wolfe import frank_wolfe_update, do_frank_wolfe
+from src_py.permutation_match import permutation_match
 
 
 class TestPermutationMatch(unittest.TestCase):

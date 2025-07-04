@@ -1,6 +1,7 @@
-import time
 import numpy as np
-from scipy.sparse import find
+
+from src.util import log
+
 
 def dense_mult_update(P, G, u, v):
     """Performs the inner multiplicative update loop."""
@@ -27,13 +28,9 @@ def dense_mult_update(P, G, u, v):
         
     return P, u, v
 
+
 def do_mult_updates(P, A, B, max_iter):
-    """
-    Performs multiplicative updates on a dense stochastic matrix.
-    """
-    t_start = time.time()
-    
-    # Convert sparse to dense for this part
+     # Convert sparse to dense for this part
     A_dense = A.toarray()
     B_dense = B.toarray()
 
@@ -48,8 +45,7 @@ def do_mult_updates(P, A, B, max_iter):
     sqrtB = np.sqrt(B_dense)
     u, v = None, None
 
-    print('\nDense multiplicative updates on bounded objective:')
-    print('  iter   midPoint   lowerBnd   upperBnd   tMin')
+    log('\nDense multiplicative updates on bounded objective:\n  iter   midPoint   lowerBnd   upperBnd   tMin')
 
     for i in range(1, max_iter + 1):
         # Gradients
@@ -61,9 +57,8 @@ def do_mult_updates(P, A, B, max_iter):
         lower_bound = 0.5 * np.sum(P * Gl)
         upper_bound = 0.5 * np.sum(P * Gu)
         mid_point = 0.5 * (lower_bound + upper_bound)
-        
-        t_min = (time.time() - t_start) / 60
-        print(f'    {i:02d}    {mid_point:07.0f}    {lower_bound:07.0f}    {upper_bound:07.0f}   {t_min:04.1f}')
+
+        log(f'    {i:02d}    {mid_point:07.0f}    {lower_bound:07.0f}    {upper_bound:07.0f}')
         
         # Update
         P, u, v = dense_mult_update(P, Gm, u, v)

@@ -1,9 +1,8 @@
-import time
 import numpy as np
-from compute_gradient import compute_gradient
-from permutation_match import permutation_match
+from src.permutation_match import permutation_match
 from scipy.sparse import csr_matrix
 
+from src.compute_gradient import compute_gradient
 from src.util import log
 
 

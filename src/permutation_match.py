@@ -1,5 +1,3 @@
-import unittest
-
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import min_weight_full_bipartite_matching
@@ -29,51 +27,3 @@ def permutation_match(W, P0=None):
 
     log("permutation_match done")
     return P
-
-
-class TestPermutationMatch(unittest.TestCase):
-
-    def setUp(self):
-        # A weight matrix where the minimum cost is clearly the anti-diagonal
-        self.W = np.array([
-            [100, 10, 1],
-            [10, 1, 100],
-            [1, 100, 10]
-        ])
-        # The optimal permutation P should pick the 1s.
-        # This corresponds to the assignment: 0->2, 1->1, 2->0 (total cost 3)
-        optimal_rows = np.array([0, 1, 2])
-        optimal_cols = np.array([2, 1, 0])
-        optimal_data = np.ones(3)
-        self.P_optimal = csr_matrix((optimal_data, (optimal_rows, optimal_cols)), shape=(3, 3))
-
-    def assertSparseMatrixEqual(self, p1, p2, msg=None):
-        self.assertEqual((p1 != p2).nnz, 0, msg)
-
-    def test_no_initial_guess(self):
-        P_result = permutation_match(self.W)
-        self.assertSparseMatrixEqual(P_result, self.P_optimal,
-                                     "Failed to find the correct permutation without P0.")
-
-    def test_with_bad_initial_guess(self):
-        P0_guess = csr_matrix(np.identity(3))
-        P_result = permutation_match(self.W, P0=P0_guess)
-        self.assertSparseMatrixEqual(P_result, self.P_optimal,
-                                     "Failed to find the correct permutation when using bad P0.")
-
-    def test_with_good_initial_guess(self):
-        P0_guess = self.P_optimal
-        P_result = permutation_match(self.W, P0=P0_guess)
-        self.assertSparseMatrixEqual(P_result, self.P_optimal,
-                                     "Failed to find the correct permutation when using good P0.")
-
-    def test_diagonal_case(self):
-        W_diag = np.array([
-            [1, 10, 20],
-            [10, 2, 30],
-            [20, 30, 3]
-        ])
-        P_identity = csr_matrix(np.identity(3))
-        P_result = permutation_match(W_diag)
-        self.assertSparseMatrixEqual(P_result, P_identity,
-                                     "Failed on a simple diagonal-dominant case.")

@@ -1,8 +1,9 @@
-from src_py.util import log
+from collections import defaultdict
 
 import numpy as np
-from collections import defaultdict
 from scipy.sparse import find
+
+from src_py.util import log
 
 
 def compute_gradient(P, A, B):
@@ -75,4 +76,3 @@ def compute_gradient(P, A, B):
     log("compute_gradient: Finished gradient computation.")
 
     return G
-

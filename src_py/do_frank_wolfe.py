@@ -1,8 +1,8 @@
 import numpy as np
-from src_py.permutation_match import permutation_match
 from scipy.sparse import csr_matrix
 
 from src_py.compute_gradient import compute_gradient
+from src_py.permutation_match import permutation_match
 from src_py.util import log
 
 

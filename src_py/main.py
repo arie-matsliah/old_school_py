@@ -1,7 +1,7 @@
-import time
 import numpy as np
-from do_mult_updates import do_mult_updates
+
 from do_frank_wolfe import do_frank_wolfe
+from do_mult_updates import do_mult_updates
 from do_swaps import do_swaps
 from permutation_match import permutation_match
 from src_py.util import read_connectome, read_solution, save_solution, log
@@ -40,4 +40,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

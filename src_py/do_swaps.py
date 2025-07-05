@@ -1,4 +1,5 @@
 import numpy as np
+
 from compute_gradient import compute_gradient
 from src_py.util import log
 
@@ -13,7 +14,7 @@ def compute_swap_gains(P, A, B):
 
     L = G @ P.T + P @ G.T
     L = L - sumGP2_full[:, np.newaxis] - sumGP2_full
-    
+
     # QUADRATIC TERM
     Bp = P @ B @ P.T
     dA = A.diagonal()
@@ -26,9 +27,9 @@ def compute_swap_gains(P, A, B):
     term3 = np.minimum(A.toarray(), Bp.toarray()) + np.minimum(A.toarray(), Bp.T.toarray())
     term4 = np.minimum(A.toarray(), dB) + np.minimum(A.toarray(), dB.T)
     Q_offdiag_part = term3 - term4
-    
+
     Q = Q_diag_part + Q_offdiag_part
-    
+
     # COMBINE TERMS
     return L + Q + Q.T
 
@@ -54,7 +55,7 @@ def swap_check(P, S, A, B):
         # Mark this swap as tested
         S[i, j] = -np.inf
         S[j, i] = -np.inf
-        
+
     return P, scoreP, num_swap
 
 
@@ -62,11 +63,10 @@ def do_swaps(P, A, B, max_iter):
     scoreP = np.minimum(A.toarray(), (P @ B @ P.T).toarray()).sum()
     log('\nPairwise swaps:\n  iter     score    swaps   tMin')
     for i in range(max_iter):
-        log(f'    {i+1:02d}   {int(scoreP):07d}    ')
+        log(f'    {i + 1:02d}   {int(scoreP):07d}    ')
         S = compute_swap_gains(P, A, B)
         P, scoreP, num_swap = swap_check(P, S, A, B)
         log(f'{num_swap:5d} swaps..')
         if num_swap == 0:
             break
     return P
-

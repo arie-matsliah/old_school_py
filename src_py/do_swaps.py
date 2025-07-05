@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.sparse import lil_matrix
 
 from compute_gradient import compute_gradient
 from src_py.util import log
@@ -60,13 +61,12 @@ def swap_check(P, S, A, B):
 
 
 def do_swaps(P, A, B, max_iter):
-    scoreP = np.minimum(A.toarray(), (P @ B @ P.T).toarray()).sum()
-    log('\nPairwise swaps:\n  iter     score    swaps   tMin')
+    P = lil_matrix(P)
+    log('iter     score    swaps')
     for i in range(max_iter):
-        log(f'    {i + 1:02d}   {int(scoreP):07d}    ')
         S = compute_swap_gains(P, A, B)
         P, scoreP, num_swap = swap_check(P, S, A, B)
-        log(f'{num_swap:5d} swaps..')
+        log(f'    {i + 1:02d}   {int(scoreP):07d}    {num_swap:5d}')
         if num_swap == 0:
             break
-    return P
+    return P.tocsr()

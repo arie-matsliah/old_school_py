@@ -34,7 +34,7 @@ def main():
 
     # --- Save Solution ---
     scoreP = np.minimum(A.toarray(), (P @ B @ P.T).toarray()).sum()
-    save_solution(f'vnc_matching_submission_{int(scoreP)}.csv', P)
+    save_solution(f'../out/vnc_matching_submission_{int(scoreP)}.csv', P)
 
     log(f'\n=== DONE ===')
 

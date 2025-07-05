@@ -84,7 +84,6 @@ class TestComputeGradient(unittest.TestCase):
         """
         # Use the provided optimized function
         G_optimized = compute_gradient(self.P, self.A, self.B)
-        print(G_optimized)
 
         # Ground truth calculation: G = A.T @ P @ B + A @ P @ B.T
         # This is a less efficient but direct way to compute the same value.
@@ -143,14 +142,12 @@ class TestFrankWolfe(unittest.TestCase):
         matrix when A and B are identity matrices.
         """
         Ps_final = do_frank_wolfe(self.Ps_initial, self.A_ident, self.B_ident, num_updates=5)
-        print(f"{Ps_final}\n{self.A_ident}\n{self.B_ident}")
 
         # After several updates, the matrix should be more diagonal-dominant
         # than the initial uniform matrix.
         initial_diag_sum = self.Ps_initial.diagonal().sum()
         final_diag_sum = Ps_final.diagonal().sum()
 
-        print(f"{final_diag_sum=} {initial_diag_sum=}")
         self.assertTrue(final_diag_sum > initial_diag_sum,
                         "FW did not converge towards a more diagonal matrix.")
 
@@ -169,6 +166,5 @@ class TestFrankWolfe(unittest.TestCase):
         # The anti-diagonal sum should be greater than the diagonal sum
         diag_sum = Ps_final.diagonal().sum()
         anti_diag_sum = np.fliplr(Ps_final.toarray()).diagonal().sum()
-        print(f"{diag_sum=} {anti_diag_sum=}")
         self.assertTrue(anti_diag_sum > diag_sum,
                         "FW did not converge towards an anti-diagonal solution.")

@@ -5,12 +5,17 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import coo_matrix
 
-start_time = time.time()  # Record the start time
+_DEBUG_ = False
 
+start_time = time.time()  # Record the start time
 
 def log(message):
     elapsed = time.time() - start_time
     print(f"[{elapsed:.2f}s] {message}")
+
+def dbg(message):
+    if _DEBUG_:
+        log(message)
 
 
 def read_connectome(filename):

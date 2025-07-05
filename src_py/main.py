@@ -8,10 +8,11 @@ from src_py.util import read_connectome, read_solution, save_solution, log
 
 
 def main():
+    data_folder = "../data/compact"
     do_cold_start = False  # Set to True to initialize at barycenter
     num_mult_updates, num_frank_wolfe, num_swap_checks = 25, 15, 20
-    A = read_connectome('../data/male_connectome_graph.csv')
-    B = read_connectome('../data/female_connectome_graph.csv')
+    A = read_connectome(f'{data_folder}/male_connectome_graph.csv')
+    B = read_connectome(f'{data_folder}/female_connectome_graph.csv')
     log("data loaded")
 
     # --- Initialization ---
@@ -22,7 +23,7 @@ def main():
         P = permutation_match(P)
         log('initialized at barycenter')
     else:
-        P = read_solution('../data/vnc_matching_submission_benchmark_5154247.csv')
+        P = read_solution(f'{data_folder}/vnc_matching_submission_benchmark_5154247.csv')
         log('initialized at submission benchmark.')
 
     # --- Main Optimization Loop ---

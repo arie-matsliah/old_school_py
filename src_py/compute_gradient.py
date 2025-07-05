@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.sparse import find
 
-from src_py.util import log
+from src_py.util import dbg
 
 
 def compute_gradient(P, A, B):
@@ -12,7 +12,7 @@ def compute_gradient(P, A, B):
     G[j,l] = sum_ik [min(A[i,j], B[k,l]) + min(A[j,i], B[l,k])] * P[i,k]
     """
 
-    log("compute_gradient: Preprocessing A and B...")
+    dbg("compute_gradient: Preprocessing A and B...")
 
     # Convert A and B to COO format for fast row/col access
     A_coo = A.tocoo()
@@ -37,7 +37,7 @@ def compute_gradient(P, A, B):
     for j, i, v in zip(B_coo.col, B_coo.row, B_coo.data):
         Bt_cols[j].append((i, v))
 
-    log("compute_gradient: Starting gradient computation...")
+    dbg("compute_gradient: Starting gradient computation...")
 
     n = P.shape[0]
     G = np.zeros((n, n))
@@ -47,7 +47,7 @@ def compute_gradient(P, A, B):
 
     for idx, (r, c, v) in enumerate(zip(rows, cols, vals)):
         if idx % 6000 == 1:
-            log(f"compute_gradient: Processing entry {idx}/{len(rows)}")
+            dbg(f"compute_gradient: Processing entry {idx}/{len(rows)}")
 
         # A.T @ P @ B term
         a_entries = A_cols.get(r, [])
@@ -73,6 +73,6 @@ def compute_gradient(P, A, B):
             min_matrix_t = np.minimum(at_vals, bt_vals) * v
             G[np.ix_(at_rows, bt_rows)] += min_matrix_t
 
-    log("compute_gradient: Finished gradient computation.")
+    dbg("compute_gradient: Finished gradient computation.")
 
     return G

@@ -10,11 +10,11 @@ from src_py.permutation_match import permutation_match
 class TestPermutationMatch(unittest.TestCase):
 
     def setUp(self):
-        # A weight matrix where the minimum cost is clearly the anti-diagonal
+        # A weight matrix where the maximum cost is clearly the anti-diagonal
         self.W = np.array([
-            [100, 10, 1],
-            [10, 1, 100],
-            [1, 100, 10]
+            [100, 10, 200],
+            [10, 500, 100],
+            [1000, 100, 10]
         ])
         # The optimal permutation P should pick the 1s.
         # This corresponds to the assignment: 0->2, 1->1, 2->0 (total cost 3)
@@ -45,9 +45,9 @@ class TestPermutationMatch(unittest.TestCase):
 
     def test_diagonal_case(self):
         W_diag = np.array([
-            [1, 10, 20],
-            [10, 2, 30],
-            [20, 30, 3]
+            [100, 10, 20],
+            [10, 200, 30],
+            [20, 30, 300]
         ])
         P_identity = csr_matrix(np.identity(3))
         P_result = permutation_match(W_diag)
@@ -111,13 +111,10 @@ class TestComputeGradient(unittest.TestCase):
 
 class TestFrankWolfe(unittest.TestCase):
     def setUp(self):
-        """Set up simple affinity matrices for testing."""
-        # Case 1: A and B are identity matrices.
         # The optimal alignment is clearly the identity matrix.
         self.A_ident = csr_matrix(np.identity(3))
         self.B_ident = csr_matrix(np.identity(3))
 
-        # Case 2: A is identity, B is anti-diagonal.
         # The optimal alignment is the anti-diagonal permutation.
         self.A_mix = csr_matrix(np.identity(3))
         self.B_mix = csr_matrix(np.fliplr(np.identity(3)))
@@ -126,15 +123,12 @@ class TestFrankWolfe(unittest.TestCase):
         self.Ps_initial = csr_matrix(np.full((3, 3), 1 / 3))
 
     def test_frank_wolfe_update_moves_towards_target(self):
-        """
-        Tests that a single FW update step moves P0 closer to P1.
-        """
         P0 = self.Ps_initial
         # Let's assume the gradient suggests P1 is the identity matrix
         G0 = -np.identity(3)  # Gradient pushes towards maximizing diagonal
         Pm = permutation_match(-P0.toarray())
 
-        P_updated = frank_wolfe_update(P0, csr_matrix(G0), Pm, self.A_ident, self.B_ident)
+        P_updated = frank_wolfe_update(P0, G0, Pm, self.A_ident, self.B_ident)
 
         # The updated matrix should not be the same as the start
         self.assertNotEqual((P_updated - P0).nnz, 0, "Update step did not change the matrix.")

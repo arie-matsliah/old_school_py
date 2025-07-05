@@ -7,13 +7,12 @@ from src_py.util import log
 
 
 def frank_wolfe_update(P0, G0, Pm, A, B):
-    # Project gradient to permutation matrix using preconditioner
     log("frank_wolfe_update [1]")
     P1 = permutation_match(G0, Pm)
-
     log("frank_wolfe_update [2]")
-    # If unchanged, return early
+
     if (P0 != P1).nnz == 0:
+        log("frank_wolfe_update no changes.. return")
         return P0
 
     G1 = compute_gradient(P1, A, B)
@@ -25,11 +24,13 @@ def frank_wolfe_update(P0, G0, Pm, A, B):
     numer = (delta_G * P0).sum() + (G0 * delta_P).sum()
     denom = (delta_G * delta_P).sum()
 
-    step = 1.0 if abs(denom) < 1e-9 else -0.5 * (numer / denom)
-    step = max(0.0, min(1.0, step))
+    step = -0.5 * (numer / denom) if abs(denom) >= 1e-9 else 1.0
+    if step > 1 or step < 0:
+        step = 1.0
 
     log("frank_wolfe_update [5]")
-    return P0 + (delta_P * step)
+    Ps = P0 + delta_P * step
+    return Ps
 
 
 # Performs Frank-Wolfe updates on the sparse doubly stochastic matrix Ps.
@@ -40,10 +41,11 @@ def do_frank_wolfe(Ps, A, B, num_updates):
 
     for i in range(1, num_updates + 1):
         # Pm is the closest permutation matrix to the current doubly-stochastic Ps
-        Pm = permutation_match(Ps.toarray())
+        Pm = permutation_match(Ps)
+        scorePm = np.minimum((A @ Pm).toarray(), (Pm @ B).toarray()).sum()
+
         Gs = compute_gradient(Ps, A, B)
-        scorePm = np.minimum(A.toarray(), (Pm @ B @ Pm.T).toarray()).sum()
-        scorePs = 0.5 * np.sum(Gs * Ps.toarray())
+        scorePs = round(0.5 * np.sum(Gs * Ps.toarray()))
         log(f'    {i:02d}   {int(scorePm):07d}   {int(scorePs):07d} updating..')
 
         if i < num_updates:

@@ -8,7 +8,7 @@ from src_py.util import read_connectome, read_solution, save_solution, log
 
 
 def main():
-    data_folder = "../data/compact"
+    data_folder = "../data"
     do_cold_start = False  # Set to True to initialize at barycenter
     num_mult_updates, num_frank_wolfe, num_swap_checks = 25, 15, 20
     A = read_connectome(f'{data_folder}/male_connectome_graph.csv')

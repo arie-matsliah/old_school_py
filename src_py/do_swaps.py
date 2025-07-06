@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import lil_matrix
 
 from compute_gradient import compute_gradient
-from src_py.util import log
+from src_py.util import log, dbg
 
 
 # Computes S_ij, the gain in score from swapping nodes i and j, before applying the permutation P.
@@ -50,6 +50,7 @@ def swap_check(P, S, A, B):
         P_swapped[[i, j], :] = P_swapped[[j, i], :]
         swap_score = np.minimum(A.toarray(), (P_swapped @ B @ P_swapped.T).toarray()).sum()
         if swap_score > scoreP:
+            dbg(f"Swapped {i} and {j}: {scoreP} -> {swap_score}")
             P = P_swapped
             scoreP = swap_score
             num_swap += 1

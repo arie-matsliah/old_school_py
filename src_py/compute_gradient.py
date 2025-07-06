@@ -8,71 +8,79 @@ from src_py.util import dbg
 
 def compute_gradient(P, A, B):
     """
-    Computes the gradient G for the graph alignment score:
-    G[j,l] = sum_ik [min(A[i,j], B[k,l]) + min(A[j,i], B[l,k])] * P[i,k]
+    Translates the MATLAB gradient computation to Python.
+
+    Args:
+        P (scipy.sparse.spmatrix): A sparse permutation matrix.
+        A (scipy.sparse.spmatrix): A sparse matrix.
+        B (scipy.sparse.spmatrix): A sparse matrix.
+
+    Returns:
+        numpy.ndarray: The dense gradient matrix G.
     """
-
-    dbg("compute_gradient: Preprocessing A and B...")
-
-    # Convert A and B to COO format for fast row/col access
-    A_coo = A.tocoo()
-    B_coo = B.tocoo()
-
-    # Precompute A[:, r] for all columns r
-    A_cols = defaultdict(list)
-    for i, j, v in zip(A_coo.row, A_coo.col, A_coo.data):
-        A_cols[j].append((i, v))
-
-    # Precompute B[:, c] for all columns c
-    B_cols = defaultdict(list)
-    for i, j, v in zip(B_coo.row, B_coo.col, B_coo.data):
-        B_cols[j].append((i, v))
-
-    # Same for transposes (A.T[:, r] and B.T[:, c])
-    At_cols = defaultdict(list)
-    for j, i, v in zip(A_coo.col, A_coo.row, A_coo.data):
-        At_cols[j].append((i, v))
-
-    Bt_cols = defaultdict(list)
-    for j, i, v in zip(B_coo.col, B_coo.row, B_coo.data):
-        Bt_cols[j].append((i, v))
-
-    dbg("compute_gradient: Starting gradient computation...")
-
     n = P.shape[0]
     G = np.zeros((n, n))
 
-    # Extract non-zero entries of P
-    rows, cols, vals = find(P)
+    # Convert matrices to COO format for efficient iteration over non-zero elements.
+    # This is equivalent to MATLAB's `find()` but gives 0-indexed results.
+    P_coo = P.tocoo()
+    A_coo = A.tocoo()
+    B_coo = B.tocoo()
 
-    for idx, (r, c, v) in enumerate(zip(rows, cols, vals)):
-        if idx % 6000 == 1:
-            dbg(f"compute_gradient: Processing entry {idx}/{len(rows)}")
+    # Pre-cache column data to avoid slow slicing inside the loop.
+    # This is an optimization over the direct MATLAB translation.
+    A_cols = {}
+    for r, c, v in zip(A_coo.row, A_coo.col, A_coo.data):
+        A_cols.setdefault(c, []).append((r, v))
 
-        # A.T @ P @ B term
-        a_entries = A_cols.get(r, [])
-        b_entries = B_cols.get(c, [])
+    B_cols = {}
+    for r, c, v in zip(B_coo.row, B_coo.col, B_coo.data):
+        B_cols.setdefault(c, []).append((r, v))
+
+    # Pre-cache transposed data as well.
+    At_cols = {}
+    for r, c, v in zip(A_coo.row, A_coo.col, A_coo.data):
+        At_cols.setdefault(r, []).append((c, v))  # Swap row and col for transpose
+
+    Bt_cols = {}
+    for r, c, v in zip(B_coo.row, B_coo.col, B_coo.data):
+        Bt_cols.setdefault(r, []).append((c, v))  # Swap row and col for transpose
+
+    # Iterate over the non-zero entries of the permutation matrix P.
+    for p_r, p_c, p_v in zip(P_coo.row, P_coo.col, P_coo.data):
+        # This loop corresponds to `for k=1:length(row)` in MATLAB.
+
+        # --- First Term: Corresponds to A and B ---
+        # Get all non-zero entries from column p_r of A and column p_c of B.
+        a_entries = A_cols.get(p_r, [])
+        b_entries = B_cols.get(p_c, [])
 
         if a_entries and b_entries:
-            a_rows, a_vals = zip(*a_entries)
-            b_rows, b_vals = zip(*b_entries)
-            a_vals = np.array(a_vals)[:, np.newaxis]  # shape (m, 1)
-            b_vals = np.array(b_vals)[np.newaxis, :]  # shape (1, k)
-            min_matrix = np.minimum(a_vals, b_vals) * v
-            G[np.ix_(a_rows, b_rows)] += min_matrix
+            # ia, a = find(A(:,row(k)))
+            ia, a = zip(*a_entries)
+            # jb, b = find(B(:,col(k)))
+            jb, b = zip(*b_entries)
 
-        # A @ P @ B.T term
-        at_entries = At_cols.get(r, [])
-        bt_entries = Bt_cols.get(c, [])
+            # Reshape for broadcasting to mimic MATLAB's min(a, b').
+            a_col = np.array(a)[:, np.newaxis]
+            b_row = np.array(b)
+
+            # G(ia,jb) += val(k) * min(a,b')
+            # np.ix_ is the NumPy equivalent for indexing with two lists.
+            G[np.ix_(ia, jb)] += p_v * np.minimum(a_col, b_row)
+
+        # --- Second Term: Corresponds to A' and B' ---
+        # Get all non-zero entries from column p_r of A' and column p_c of B'.
+        at_entries = At_cols.get(p_r, [])
+        bt_entries = Bt_cols.get(p_c, [])
 
         if at_entries and bt_entries:
-            at_rows, at_vals = zip(*at_entries)
-            bt_rows, bt_vals = zip(*bt_entries)
-            at_vals = np.array(at_vals)[:, np.newaxis]
-            bt_vals = np.array(bt_vals)[np.newaxis, :]
-            min_matrix_t = np.minimum(at_vals, bt_vals) * v
-            G[np.ix_(at_rows, bt_rows)] += min_matrix_t
+            ia_t, a_t = zip(*at_entries)
+            jb_t, b_t = zip(*bt_entries)
 
-    dbg("compute_gradient: Finished gradient computation.")
+            a_t_col = np.array(a_t)[:, np.newaxis]
+            b_t_row = np.array(b_t)
+
+            G[np.ix_(ia_t, jb_t)] += p_v * np.minimum(a_t_col, b_t_row)
 
     return G

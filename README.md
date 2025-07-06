@@ -1,4 +1,4 @@
-# Flywire VNC Matching Challenge Code
+# FlyWire VNC Matching Challenge – Winning Solution Code
 
 This repository contains code from Team Old School (Dan Lee and Lawrence Saul) to discover a 
 top-scoring solution to the [Flywire VNC Matching Challenge](https://codex.flywire.ai/app/vnc_matching_challenge). 

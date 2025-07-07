@@ -45,7 +45,7 @@ def do_mult_updates(P, A, B, max_iter):
     sqrtB = np.sqrt(B_dense)
     u, v = None, None
 
-    log('\nDense multiplicative updates on bounded objective:\n  iter   midPoint   lowerBnd   upperBnd   tMin')
+    log('\nDense multiplicative updates on bounded objective:\n  iter   midPoint   lowerBnd   upperBnd')
 
     for i in range(1, max_iter + 1):
         # Gradients

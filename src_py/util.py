@@ -11,7 +11,7 @@ start_time = time.time()  # Record the start time
 
 def log(message):
     elapsed = time.time() - start_time
-    print(f"[{elapsed:.2f}s] {message}")
+    print(f"{message}    [{elapsed:.2f}s]")
 
 def dbg(message):
     if _DEBUG_:

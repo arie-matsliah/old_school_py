@@ -35,7 +35,7 @@ def frank_wolfe_update(P0, G0, Pm, A, B):
 
 # Performs Frank-Wolfe updates on the sparse doubly stochastic matrix Ps.
 def do_frank_wolfe(Ps, A, B, num_updates):
-    log('\nFrank-Wolfe updates:\n  iter    vertex   simplex   tMin')
+    log('\nFrank-Wolfe updates:\n  iter    vertex   simplex')
     if isinstance(Ps, np.ndarray):
         Ps = csr_matrix(Ps)
 

@@ -1,9 +1,4 @@
-from collections import defaultdict
-
 import numpy as np
-from scipy.sparse import find
-
-from src_py.util import dbg
 
 
 def compute_gradient(P, A, B):

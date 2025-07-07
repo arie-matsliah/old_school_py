@@ -54,6 +54,38 @@ class TestPermutationMatch(unittest.TestCase):
         self.assertSparseMatrixEqual(P_result, P_identity,
                                      "Failed on a simple diagonal-dominant case.")
 
+    def test_permutation_match_with_preconditioning(self):
+        # Construct the W matrix
+        W = np.array([
+            [0, 1, 0, 0, 1, 1, 0, 0, 0],
+            [1, 3, 1, 0, 0, 0, 1, 0, 0],
+            [0, 2, 1, 0, 0, 1, 0, 1, 0],
+            [0, 1, 1, 0, 0, 0, 1, 1, 0],
+            [0, 0, 1, 1, 1, 0, 0, 0, 0],
+            [1, 0, 0, 1, 4, 1, 1, 1, 0],
+            [0, 0, 0, 1, 1, 0, 1, 0, 0],
+            [0, 0, 1, 0, 1, 0, 1, 1, 1],
+            [0, 0, 0, 0, 1, 1, 0, 0, 1],
+        ])
+
+        # Construct the initial permutation matrix P0
+        row = np.array([0, 2, 3, 8, 7, 5, 1, 6, 4])
+        col = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+        data = np.ones_like(row)
+        P0 = csr_matrix((data, (row, col)), shape=W.shape)
+
+        # Expected permutation matrix
+        expected_rows = np.array([8, 1, 2, 4, 5, 0, 6, 3, 7])
+        expected_cols = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+        expected_data = np.ones_like(expected_rows)
+        expected_P = csr_matrix((expected_data, (expected_rows, expected_cols)), shape=W.shape)
+
+        # Run the function
+        P = permutation_match(W, P0)
+
+        # Assert the result matches the expected output
+        self.assertTrue((P != expected_P).nnz == 0, msg=f"Expected:\n{expected_P.toarray()}\nGot:\n{P.toarray()}")
+
 
 class TestComputeGradient(unittest.TestCase):
     def setUp(self):
